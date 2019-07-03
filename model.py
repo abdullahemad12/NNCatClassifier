@@ -55,6 +55,48 @@ def relu(A):
     A[A < 0] = 0
     return A
 
+def relu_backward(dA, cache):
+    """
+    Implement the backward propagation for a single RELU unit.
+
+    Arguments:
+    dA -- post-activation gradient, of any shape
+    cache -- 'Z' where we store for computing backward propagation efficiently
+
+    Returns:
+    dZ -- Gradient of the cost with respect to Z
+    """
+    
+    Z = cache["Z"]
+    dZ = np.array(dA, copy=True) # just converting dz to a correct object.
+    
+    # When z <= 0, you should set dz to 0 as well. 
+    dZ[Z <= 0] = 0
+    
+    assert (dZ.shape == Z.shape)
+    
+    return dZ
+
+
+
+def sigmoid_backward(dA, cache):
+    """
+    Implement the backward propagation for a single SIGMOID unit.
+
+    Arguments:
+    dA -- post-activation gradient, of any shape
+    cache -- 'Z' where we store for computing backward propagation efficiently
+
+    Returns:
+    dZ -- Gradient of the cost with respect to Z
+    """
+    
+    Z = cache["Z"]
+
+    dZ = dA * sigmoid(Z) * (1 - sigmoid(Z))
+
+    return dZ
+
 def layer_forward(A, W, b):
     """
     Arguments:
@@ -190,11 +232,106 @@ def layer_backward(dZ, cache):
     
     return (dA_prev, dW, db)
 
-dZ, linear_cache = linear_backward_test_case()
 
-dA_prev, dW, db = layer_backward(dZ, linear_cache)
-print ("dA_prev = "+ str(dA_prev))
-print ("dW = " + str(dW))
-print ("db = " + str(db))
 
+def layer_backward_activation(dA, cache, activation):
+
+    """
+    Implement the backward propagation for the LINEAR->ACTIVATION layer.
     
+    Arguments:
+    dA -- post-activation gradient for current layer l 
+    cache -- tuple of values (linear_cache, activation_cache) we store for computing backward propagation efficiently
+    activation -- the activation to be used in this layer, stored as a text string: "sigmoid" or "relu"
+    
+    Returns:
+    dA_prev -- Gradient of the cost with respect to the activation (of the previous layer l-1), same shape as A_prev
+    dW -- Gradient of the cost with respect to W (current layer l), same shape as W
+    db -- Gradient of the cost with respect to b (current layer l), same shape as b
+    """
+
+    (linear_cache, activation_cache) = cache
+
+    dA_prev = None
+    dW = None
+    db = None
+
+
+    if activation == 'sigmoid':
+        dZ = sigmoid_backward(dA, activation_cache)
+        (dA_prev, dW, db) = layer_backward(dZ, linear_cache)
+
+    elif activation == 'relu':
+        dZ = relu_backward(dA, activation_cache)
+        (dA_prev, dW, db) = layer_backward(dZ, linear_cache)        
+
+
+    return (dA_prev, dW, db)
+
+
+
+def L_model_backward(AL, Y, caches):
+    """
+    Implement the backward propagation for the [LINEAR->RELU] * (L-1) -> LINEAR -> SIGMOID group
+    
+    Arguments:
+    AL -- probability vector, output of the forward propagation (L_model_forward())
+    Y -- true "label" vector (containing 0 if non-cat, 1 if cat)
+    caches -- list of caches containing:
+                every cache of linear_activation_forward() with "relu" (it's caches[l], for l in range(L-1) i.e l = 0...L-2)
+                the cache of linear_activation_forward() with "sigmoid" (it's caches[L-1])
+    
+    Returns:
+    grads -- A dictionary with the gradients
+             grads["dA" + str(l)] = ... 
+             grads["dW" + str(l)] = ...
+             grads["db" + str(l)] = ... 
+    """
+
+    grads = {}
+    L = len(caches) # the number of layers
+    m = AL.shape[1]
+    Y = Y.reshape(AL.shape) # after this line, Y is the same shape as AL
+
+
+    dA =  - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
+
+    current_cache = caches[L-1]
+    (grads["dA" + str(L-1)], grads["dW" + str(L)], grads["db" + str(L)]) = layer_backward_activation(dA, current_cache, activation = 'sigmoid')
+
+    for l in reversed(range(L-1)):
+
+        current_cache = caches[l]
+        (dATemp, dWTemp, dbTemp) = layer_backward_activation(grads["dA" + str(l+1)], current_cache, activation = 'relu')
+        grads["dA" + str(l)] = dATemp
+        grads["dW" + str(l+1)] = dWTemp
+        grads["db" + str(l+1)] = dbTemp
+
+    return grads
+        
+
+
+
+def update_parameters(parameters, grads, learning_rate):
+    """
+    Update parameters using gradient descent
+    
+    Arguments:
+    parameters -- python dictionary containing your parameters 
+    grads -- python dictionary containing your gradients, output of L_model_backward
+    
+    Returns:
+    parameters -- python dictionary containing your updated parameters 
+                  parameters["W" + str(l)] = ... 
+                  parameters["b" + str(l)] = ...
+    """
+
+    L = len(parameters) // 2
+
+    for l in range(1, L+1):
+        parameters["W" + str(l)] = parameters["W" + str(l)] - (learning_rate) * grads["dW" + str(l)]
+        parameters["b" + str(l)] = parameters["b" + str(l)] - (learning_rate) * grads["db" + str(l)]
+
+    return parameters    
+
+
