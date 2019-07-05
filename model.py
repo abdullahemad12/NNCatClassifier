@@ -22,12 +22,12 @@ def model_init(model_dims):
                     Wl -- weight matrix of shape (layer_dims[l], layer_dims[l-1])
                     bl -- bias vector of shape (layer_dims[l], 1)
     """
-    np.random.seed(3)
+    np.random.seed(1)
     dic = {}
     L = len(model_dims)
     for l in range(1, L):
         dic['W' + str(l)] = np.random.randn(model_dims[l], model_dims[l-1]) * 0.01
-        dic['b' + str(l)] = np.zeros((model_dims[l], 1)) * 0.01
+        dic['b' + str(l)] = np.zeros((model_dims[l], 1))
 
     return dic
 
@@ -46,7 +46,7 @@ def layer_forward(A, W, b):
 
     Z = np.dot(W, A) + b
 
-    cache = {'A': A, 'W': W, 'b': b}
+    cache = (A, W, b)
     
     return (Z, cache) 
 
@@ -132,7 +132,7 @@ def compute_cost(AL, Y):
     m = Y.shape[1]
 
     
-    cost = 1 / m * (- np.sum((Y * np.log(AL)) + (1 - Y) * np.log(1 - AL)))
+    cost = (1./m) * (-np.dot(Y,np.log(AL).T) - np.dot(1-Y, np.log(1-AL).T))
 
     cost = np.squeeze(cost)
     return cost
@@ -155,6 +155,7 @@ def layer_backward(dZ, cache):
 
 
     (A_prev, W, b) = cache
+
 
     m = A_prev.shape[1]
 
@@ -233,7 +234,6 @@ def L_model_backward(AL, Y, caches):
 
     current_cache = caches[L-1]
     (grads["dA" + str(L-1)], grads["dW" + str(L)], grads["db" + str(L)]) = layer_backward_activation(dA, current_cache, activation = 'sigmoid')
-
     for l in reversed(range(L-1)):
 
         current_cache = caches[l]
@@ -264,14 +264,14 @@ def update_parameters(parameters, grads, learning_rate):
     L = len(parameters) // 2
 
     for l in range(1, L+1):
-        parameters["W" + str(l)] = parameters["W" + str(l)] - (learning_rate) * grads["dW" + str(l)]
-        parameters["b" + str(l)] = parameters["b" + str(l)] - (learning_rate) * grads["db" + str(l)]
+        parameters["W" + str(l)] = parameters["W" + str(l)] - ((learning_rate) * grads["dW" + str(l)])
+        parameters["b" + str(l)] = parameters["b" + str(l)] - ((learning_rate) * grads["db" + str(l)])
 
     return parameters    
 
 
 
-def nn_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, print_cost=False):
+def nn_model(X, Y, layers_dims, learning_rate = 0.01, num_iterations = 3000, print_cost=False):
     """
     Implements a L-layer neural network: [LINEAR->RELU]*(L-1)->LINEAR->SIGMOID.
     
@@ -288,7 +288,7 @@ def nn_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, p
     """
 
 
-    np.random.seed(1)
+    np.random.seed(5)
 
 
     costs = []
@@ -296,7 +296,7 @@ def nn_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, p
 
     parameters = model_init(layers_dims)
 
-    for i in range(num_iterations):
+    for i in range(0, num_iterations):
 
         (AL, caches) = L_model_forward(X, parameters) # Forward pass
         cost = compute_cost(AL, Y) # compute cost function
@@ -309,12 +309,14 @@ def nn_model(X, Y, layers_dims, learning_rate = 0.0075, num_iterations = 3000, p
         if print_cost and i % 100 == 0:
             costs.append(cost)
 
-        # plot the cost
-        plt.plot(np.squeeze(costs))
-        plt.ylabel('cost')
-        plt.xlabel('iterations (per hundreds)')
-        plt.title("Learning rate =" + str(learning_rate))
-        plt.show()
+    # plot the cost
+    plt.plot(np.squeeze(costs))
+    plt.ylabel('cost')
+    plt.xlabel('iterations (per hundreds)')
+    plt.title("Learning rate =" + str(learning_rate))
+    plt.show()
+
+    return parameters
 
 
 def predict(X, parameters):

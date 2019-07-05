@@ -21,8 +21,8 @@ def relu(A):
     parameters -- np array containing the output of the relu function
     """
      
-    A[A < 0] = 0
-    return A
+    Z = np.maximum(0, A)
+    return Z
 
 def relu_backward(dA, cache):
     """
