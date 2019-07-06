@@ -84,11 +84,29 @@ test_set_x = test_set_x_flatten/255.
 
 
 # create and train the neural network
-layers_dims = [12288, 20, 7, 5, 1]
-parameters = nn.nn_model(train_set_x, train_set_y, layers_dims, num_iterations = 2500, print_cost=figures)
+layers_dims = [12288, 64, 32, 16, 1]
+parameters = nn.nn_model(train_set_x, train_set_y, layers_dims, num_iterations = 3000, print_cost=figures)
 nn.calculate_accuracy(test_set_x, test_set_y, parameters)
 
 
+
+# We preprocess the image to fit your algorithm.
+fname = image
+
+image = cv2.imread(fname)
+image = cv2.resize(image, dsize=(num_px,num_px), interpolation=cv2.INTER_CUBIC)
+my_image = image.reshape((1, num_px*num_px*3)).T
+
+plt.imshow(image)
+plt.show()
+
+
+
+my_predicted_image = nn.predict(my_image, parameters)
+
+
+
+print("\nThis looks like a \"" + classes[int(np.squeeze(my_predicted_image)),].decode("utf-8") +  "\" picture.")
 
 
 

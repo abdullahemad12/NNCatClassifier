@@ -2,6 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from activation import *
 from testCases_v4 import *
+import deepdish as dd
+import os
 
 
 plt.rcParams['figure.figsize'] = (5.0, 4.0) # set default size of plots
@@ -12,7 +14,7 @@ plt.rcParams['image.cmap'] = 'gray'
 np.random.seed(1)
 
 
-def model_init(model_dims):
+def model_init(layer_dims):
     """
     Arguments:
     layer_dims -- python array (list) containing the dimensions of each layer in our network
@@ -22,14 +24,20 @@ def model_init(model_dims):
                     Wl -- weight matrix of shape (layer_dims[l], layer_dims[l-1])
                     bl -- bias vector of shape (layer_dims[l], 1)
     """
+    
     np.random.seed(1)
-    dic = {}
-    L = len(model_dims)
-    for l in range(1, L):
-        dic['W' + str(l)] = np.random.randn(model_dims[l], model_dims[l-1]) * 0.01
-        dic['b' + str(l)] = np.zeros((model_dims[l], 1))
+    parameters = {}
+    L = len(layer_dims)            # number of layers in the network
 
-    return dic
+    for l in range(1, L):
+        parameters['W' + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) / np.sqrt(layer_dims[l-1]) #*0.01
+        parameters['b' + str(l)] = np.zeros((layer_dims[l], 1))
+        
+        assert(parameters['W' + str(l)].shape == (layer_dims[l], layer_dims[l-1]))
+        assert(parameters['b' + str(l)].shape == (layer_dims[l], 1))
+
+        
+    return parameters
 
 
 def layer_forward(A, W, b):
@@ -287,6 +295,10 @@ def nn_model(X, Y, layers_dims, learning_rate = 0.01, num_iterations = 3000, pri
     parameters -- parameters learnt by the model. They can then be used to predict.
     """
 
+    parameters = None
+    if os.path.isfile('model.h5'):
+        parameters = dd.io.load('model.h5')
+        return parameters
 
     np.random.seed(5)
 
@@ -316,6 +328,7 @@ def nn_model(X, Y, layers_dims, learning_rate = 0.01, num_iterations = 3000, pri
     plt.title("Learning rate =" + str(learning_rate))
     plt.show()
 
+    dd.io.save('model.h5', parameters)
     return parameters
 
 
