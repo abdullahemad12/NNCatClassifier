@@ -84,8 +84,8 @@ test_set_x = test_set_x_flatten/255.
 
 
 # create and train the neural network
-layers_dims = [12288, 64, 32, 16, 1]
-parameters = nn.nn_model(train_set_x, train_set_y, layers_dims, num_iterations = 3000, print_cost=figures)
+layers_dims = [12288, 32, 16, 8, 1]
+parameters = nn.nn_model(train_set_x, train_set_y, layers_dims, num_iterations = 1100, print_cost=figures)
 nn.calculate_accuracy(test_set_x, test_set_y, parameters)
 
 
